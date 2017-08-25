@@ -141,36 +141,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mChildEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                //datasnapshot is the data at the moment on firebase and it is sterlized to object
-                //of the FriendlyMessage.class
-                FriendlyMessage friendlyMessage =  dataSnapshot.getValue(FriendlyMessage.class);
-                mMessageAdapter.add(friendlyMessage);
-            }
 
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        mMessagesDatabaseReferences.addChildEventListener(mChildEventListener);
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -178,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
 
                 if(user!=null){
-                    Toast.makeText(MainActivity.this, "You're now signed in. Welcome to FriendlyChat.", Toast.LENGTH_SHORT).show();
+                    onSignedIn(user.getDisplayName());
                 }
                 else{
                     List<AuthUI.IdpConfig> providers = Arrays.asList(
@@ -210,6 +181,8 @@ public class MainActivity extends AppCompatActivity {
         if(mAuthStateListener!=null){
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }
+        mMessageAdapter.clear();
+        detachDatabaseReadListener();
     }
 
     @Override
@@ -222,5 +195,54 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onSignedIn(String username){
+        mUsername = username;
+        attachListener();
+    }
+
+    public void onSignedOut(){
+        mUsername = ANONYMOUS;
+        mMessageAdapter.clear();
+        detachDatabaseReadListener();
+    }
+
+    public void attachListener(){
+        if(mChildEventListener == null) {
+            mChildEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    //datasnapshot is the data at the moment on firebase and it is sterlized to object
+                    //of the FriendlyMessage.class
+                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                    mMessageAdapter.add(friendlyMessage);
+                }
+
+                @Override
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                }
+
+                @Override
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+                }
+
+                @Override
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            };
+            mMessagesDatabaseReferences.addChildEventListener(mChildEventListener);
+        }
+    }
+
+    public void detachDatabaseReadListener(){
+        if(mChildEventListener != null){
+            mMessagesDatabaseReferences.removeEventListener(mChildEventListener);
+            mChildEventListener = null;
+        }
     }
 }
