@@ -30,6 +30,9 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUsername;
 
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mMessagesDatabaseReferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +68,15 @@ public class MainActivity extends AppCompatActivity {
         mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendButton = (Button) findViewById(R.id.sendButton);
+
+        /**
+         * This is main access point for our database.
+         * Here we get instant of the class.
+         */
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        // 'mFirebaseDatabase.getReference()' gives us reference to the root node.
+        // The rest part is that we are intrested in "messages" portion of the database.
+        mMessagesDatabaseReferences = mFirebaseDatabase.getReference().child("messages");
 
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
