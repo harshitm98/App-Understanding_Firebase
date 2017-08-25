@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(),mUsername,null);
+                mMessagesDatabaseReferences.push().setValue(friendlyMessage);
                 mMessageEditText.setText("");
             }
         });
