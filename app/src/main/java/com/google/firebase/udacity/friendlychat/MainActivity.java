@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private String mUsername;
 
     public static final int RC_SIGN_IN = 1;
+    private static final int RC_PHOTO_PICKER =  2;
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mMessagesDatabaseReferences;
@@ -107,7 +108,12 @@ public class MainActivity extends AppCompatActivity {
         mPhotoPickerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO: Fire an intent to show an image picker
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.setType("image/jpeg");
+                i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+                // We are using startActivityForResult because after sending the intent we need to process
+                // the result and use the result.
+                startActivityForResult(Intent.createChooser(i,"Complete action using"), RC_PHOTO_PICKER);
             }
         });
 
