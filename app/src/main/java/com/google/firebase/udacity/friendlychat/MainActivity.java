@@ -16,6 +16,7 @@
 package com.google.firebase.udacity.friendlychat;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +35,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -41,6 +43,9 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private FirebaseStorage mFirebaseStorage;
+    private StorageReference mChatsStorageReference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +103,8 @@ public class MainActivity extends AppCompatActivity {
 
         mFirebaseAuth = FirebaseAuth.getInstance();
 
+        mFirebaseStorage = FirebaseStorage.getInstance();
+        mChatsStorageReference = mFirebaseStorage.getReference().child("chat_photos");
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
         mMessageAdapter = new MessageAdapter(this, R.layout.item_message, friendlyMessages);
@@ -264,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN){
-            if(requestCode == RESULT_OK){
+            if(resultCode == RESULT_OK){
                 // Sign-in succeeded, set up the UI
                 Toast.makeText(this,"Signed in!", Toast.LENGTH_SHORT).show();
             }
@@ -273,6 +282,25 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this,"Sign in cancelled",Toast.LENGTH_SHORT).show();
                 finish();
             }
+            else if(requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK){
+                Uri selectedImageUri = data.getData();
+
+                // Get a reference to store photos (chat_photos/<get_ref>)
+                StorageReference photoRef = mChatsStorageReference.child(selectedImageUri.getLastPathSegment());
+
+                // Upload file to Firebase Storage
+                photoRef.putFile(selectedImageUri).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // When the image has successfully uploaded, we get its download URL
+                        Uri downloadUri = taskSnapshot.getDownloadUrl();
+
+                        FriendlyMessage friendlyMessage = new FriendlyMessage(null,mUsername,downloadUri.toString());
+                        mMessagesDatabaseReferences.push().setValue(friendlyMessage);
+                    }
+                });
+            }
+
         }
     }
 }
