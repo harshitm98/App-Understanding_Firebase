@@ -23,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -272,35 +273,32 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN){
-            if(resultCode == RESULT_OK){
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
                 // Sign-in succeeded, set up the UI
-                Toast.makeText(this,"Signed in!", Toast.LENGTH_SHORT).show();
-            }
-            else if(resultCode == RESULT_CANCELED){
+                Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
-                Toast.makeText(this,"Sign in cancelled",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Sign in cancelled", Toast.LENGTH_SHORT).show();
                 finish();
             }
-            else if(requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK){
-                Uri selectedImageUri = data.getData();
+        }
+        else if(requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK){
+            Uri selectedImageUri = data.getData();
 
-                // Get a reference to store photos (chat_photos/<get_ref>)
-                StorageReference photoRef = mChatsStorageReference.child(selectedImageUri.getLastPathSegment());
+            // Get a reference to store photos (chat_photos/<get_ref>)
+            StorageReference photoRef = mChatsStorageReference.child(selectedImageUri.getLastPathSegment());
+            // Upload file to Firebase Storage
+            photoRef.putFile(selectedImageUri).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // When the image has successfully uploaded, we get its download URL
+                    Uri downloadUrl = taskSnapshot.getDownloadUrl();
 
-                // Upload file to Firebase Storage
-                photoRef.putFile(selectedImageUri).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        // When the image has successfully uploaded, we get its download URL
-                        Uri downloadUri = taskSnapshot.getDownloadUrl();
-
-                        FriendlyMessage friendlyMessage = new FriendlyMessage(null,mUsername,downloadUri.toString());
-                        mMessagesDatabaseReferences.push().setValue(friendlyMessage);
-                    }
-                });
-            }
-
+                    FriendlyMessage friendlyMessage = new FriendlyMessage(null,mUsername,downloadUrl.toString());
+                    mMessagesDatabaseReferences.push().setValue(friendlyMessage);
+                }
+            });
         }
     }
 }
